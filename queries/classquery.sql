@@ -52,3 +52,29 @@ WHERE p.height =
 --Create a list showing each player’s first and last names as well as the total salary they earned in the major leagues. 
 --Sort this list in descending order by the total salary earned. 
 --Which Vanderbilt player earned the most money in the majors?
+WITH q3 AS( 
+	SELECT
+		p.namefirst,
+		p.namelast,
+		SUM(sal.salary) AS total_salary,
+-- duplicates are annoying, so adding row numbers so i can take them out
+		ROW_NUMBER () OVER (PARTITION BY (p.namelast,p.namefirst) ORDER BY namelast)
+	FROM people AS p
+	LEFT JOIN collegeplaying AS cp
+		ON p.playerid = cp.playerid
+	LEFT JOIN schools AS s
+		ON cp.schoolid = s.schoolid
+	LEFT JOIN salaries AS sal
+		ON p.playerid = sal.playerid
+	WHERE s.schoolname ='Vanderbilt University'
+	GROUP BY p.namefirst, p.namelast, p.playerid
+	HAVING SUM(sal.salary) IS NOT NULL
+	ORDER BY total_salary DESC)
+SELECT *
+FROM q3
+WHERE row_number = 1;
+-- David Price.  
+
+
+--Q4
+
