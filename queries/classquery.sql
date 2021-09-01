@@ -76,5 +76,46 @@ WHERE row_number = 1;
 -- David Price.  
 
 
---Q4
+--Q4: Using the fielding table, group players into three groups based on their position: 
+--label players with position OF as "Outfield", 
+--those with position "SS", "1B", "2B", and "3B" as "Infield", 
+--and those with position "P" or "C" as "Battery". 
+SELECT
+	playerid,
+	CASE WHEN pos IN ('SS', '1B', '2B', '3B') THEN 'Infield'
+		WHEN pos IN ('P', 'C') THEN 'Battery'
+		WHEN pos = 'OF' THEN 'Outfield'
+		ELSE 'unknown' END AS position
+FROM fielding
+GROUP BY position, playerid
+ORDER BY position;
+--Determine the number of putouts made by each of these three groups in 2016.
+SELECT
+	CASE WHEN pos IN ('SS', '1B', '2B', '3B') THEN 'Infield'
+		WHEN pos IN ('P', 'C') THEN 'Battery'
+		ELSE 'Outfield'
+		END AS position,
+	SUM(po) AS no_of_putouts
+FROM fielding
+WHERE yearid = 2016
+GROUP BY position
+ORDER BY position;
+
+
+--Q5:Find the average number of strikeouts per game by decade since 1920. 
+--Round the numbers you report to 2 decimal places. 
+--Do the same for home runs per game. Do you see any trends? 
+SELECT 
+	yearid/10*10 AS decade,
+	ROUND(AVG(so),2) AS avg_strikeouts,
+	ROUND(AVG(hr),2) AS avg_homeruns
+FROM batting
+WHERE yearid >= 1920
+GROUP BY yearid/10*10
+ORDER BY yearid/10*10;
+-- i'm not sure this is answering the question, because i'm not sure i understand the question.
+-- but if right, i see larger averages on both numbers of homeruns and numbers of strikeouts over time
+-- with peaks in both in the 60s
+
+
 
