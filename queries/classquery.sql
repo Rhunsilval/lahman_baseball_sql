@@ -118,4 +118,50 @@ ORDER BY yearid/10*10;
 -- with peaks in both in the 60s
 
 
+--Q6: Find the player who had the most success stealing bases in 2016, 
+--where success is measured as the percentage of stolen base attempts which are successful. 
+--(A stolen base attempt results either in a stolen base or being caught stealing.) 
+--Consider only players who attempted at least 20 stolen bases.
+--outer query to get the name of the player with the top success percentage
+SELECT 
+	namefirst,
+	namelast,
+	total_attempts,
+	successfulness
+FROM (
+-- query3 to calculate successfulness
+	SELECT 
+		playerid,
+		bases_stolen,
+		caught_stealing,
+		total_attempts,
+		ROUND(((bases_stolen/total_attempts)*100),2) AS successfulness
+	FROM (
+	-- query2 to calculate the total number of attempts to steal a base 
+		SELECT 
+			playerid,
+			bases_stolen,
+			caught_stealing,
+			SUM(bases_stolen + caught_stealing)AS total_attempts
+		FROM (
+	--my core query: id, total bases stolen, total attempts, no nulls, year is 2016, and minimum of 20 stolen bases
+			SELECT
+				playerid,
+				SUM(sb) AS bases_stolen,
+				SUM(cs) AS caught_stealing
+			FROM batting
+			WHERE cs IS NOT NULL
+				AND yearid = 2016
+			GROUP BY playerid
+			HAVING SUM(sb) >20)AS subquery1
+		GROUP BY playerid,bases_stolen, caught_stealing) AS subquery2
+	GROUP BY playerid, bases_stolen, caught_stealing, total_attempts
+	ORDER BY successfulness DESC) AS subquery3
+LEFT JOIN people AS p
+	ON subquery3.playerid=p.playerid
+GROUP BY namefirst, namelast, total_attempts, successfulness
+ORDER BY successfulness DESC;
+-- Chris Owings is #1 by percentage for 2016
+
+
 
