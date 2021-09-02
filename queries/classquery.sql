@@ -164,4 +164,85 @@ ORDER BY successfulness DESC;
 -- Chris Owings is #1 by percentage for 2016
 
 
+--Q7: From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? 
+SELECT MAX(wins)
+FROM (
+-- my core query: team, year, #of wins and not a series winner, between 1970 and 2016
+	SELECT 
+		teamid AS team,
+		yearid AS year,
+		w AS wins,
+		wswin AS worldseries_winner
+	FROM teams
+	WHERE yearid BETWEEN 1970 AND 2016
+		AND wswin = 'N'
+	GROUP BY teamid, yearid, w, wswin
+	ORDER BY yearid) AS subquery;
+-- 116
+--What is the smallest number of wins for a team that did win the world series? 
+SELECT MIN(wins)
+FROM (
+-- my core query: team, year, #of wins and IS a series winner, between 1970 and 2016
+	SELECT 
+		teamid AS team,
+		yearid AS year,
+		w AS wins,
+		wswin AS worldseries_winner
+	FROM teams
+	WHERE yearid BETWEEN 1970 AND 2016
+		AND wswin = 'Y'
+	GROUP BY teamid, yearid, w, wswin
+	ORDER BY yearid) AS subquery;
+-- 63
+--Doing this will probably result in an unusually small number of wins for a world series champion – 
+--determine why this is the case. 
+SELECT
+	teamid AS teamid,
+	name AS team_name,
+	yearid AS year,
+	w AS wins,
+	wswin AS worldseries_winner
+FROM teams
+WHERE w = 63
+	AND wswin = 'Y';
+-- looked it up on google: there was a strike that year.  low # wins because low# games played. 
+--Then redo your query, excluding the problem year. 
+SELECT MIN(wins)
+FROM (
+-- my core query: team, year, #of wins and IS a series winner, between 1970 and 2016
+	SELECT 
+		teamid AS team,
+		yearid AS year,
+		w AS wins,
+		wswin AS worldseries_winner
+	FROM teams
+	WHERE yearid BETWEEN 1970 AND 2016
+		AND wswin = 'Y'
+		AND yearid <> 1981
+	GROUP BY teamid, yearid, w, wswin
+	ORDER BY yearid) AS subquery;
+-- 83
+--How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? 
+WITH query AS (
+	SELECT
+		name AS team_name,
+		yearid AS year,
+		w AS no_wins,
+		wswin AS worldseries_winner,
+-- adding a row number to make the #1 team by games won numbered 1 each year
+		ROW_NUMBER () OVER (PARTITION BY (yearid) ORDER BY (yearid,w)DESC)
+	FROM teams
+	WHERE yearid BETWEEN 1970 AND 2016
+	GROUP BY yearid, name, w, wswin
+	ORDER BY yearid, w DESC)
+SELECT COUNT(team_name)
+FROM query
+WHERE row_number=1 
+	AND worldseries_winner = 'Y';
+--11
+--What percentage of the time?
+-- 11 instances over 46 years = 24% done manually. made more sense as it's a very easy calculation, 
+-- whereas typing a query would take much longer.  and, i'm not sure how to structure that query ... 
+
+
 
