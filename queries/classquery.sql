@@ -137,7 +137,7 @@ FROM (
 		total_attempts,
 		ROUND(((bases_stolen/total_attempts)*100),2) AS successfulness
 	FROM (
-	-- query2 to calculate the total number of attempts to steal a base 
+	-- query2 to calculate the total number of attempts to steal a base since i couldn't get this thing to sum a sum
 		SELECT 
 			playerid,
 			bases_stolen,
@@ -150,8 +150,7 @@ FROM (
 				SUM(sb) AS bases_stolen,
 				SUM(cs) AS caught_stealing
 			FROM batting
-			WHERE cs IS NOT NULL
-				AND yearid = 2016
+			WHERE yearid = 2016
 			GROUP BY playerid
 			HAVING SUM(sb) >20)AS subquery1
 		GROUP BY playerid,bases_stolen, caught_stealing) AS subquery2
@@ -243,6 +242,54 @@ WHERE row_number=1
 --What percentage of the time?
 -- 11 instances over 46 years = 24% done manually. made more sense as it's a very easy calculation, 
 -- whereas typing a query would take much longer.  and, i'm not sure how to structure that query ... 
+
+
+--Q8: Using the attendance figures from the homegames table, 
+--find the teams and parks which had the top 5 average attendance per game in 2016 
+--(where average attendance is defined as total attendance divided by number of games). 
+--Only consider parks where there were at least 10 games played. 
+--Report the park name, team name, and average attendance. 
+--Repeat for the lowest 5 average attendance.
+WITH query AS (
+	SELECT
+		p.park_name,
+		t.name AS team_name,
+		(hg.attendance/hg.games) AS avg_attendance,
+	-- adding a row number to use CTE to remove duplicates
+		ROW_NUMBER () OVER (PARTITION BY park_name)
+	FROM homegames AS hg
+	LEFT JOIN parks AS p
+		ON hg.park = p.park
+	LEFT JOIN teams AS t
+		ON hg.team = t.teamid
+	WHERE hg.year = 2016
+		AND hg.games >=10
+	ORDER BY avg_attendance DESC, row_number)
+SELECT park_name, team_name, avg_attendance
+FROM query
+WHERE row_number = 1
+LIMIT 5;
+-- TOP 5: dodger stadium, busch stadium iii, rogers centre, at&t park, wrigley field
+WITH query AS (
+	SELECT
+		p.park_name,
+		t.name AS team_name,
+		(hg.attendance/hg.games) AS avg_attendance,
+	-- adding a row number to use CTE to remove duplicates
+		ROW_NUMBER () OVER (PARTITION BY park_name)
+	FROM homegames AS hg
+	LEFT JOIN parks AS p
+		ON hg.park = p.park
+	LEFT JOIN teams AS t
+		ON hg.team = t.teamid
+	WHERE hg.year = 2016
+		AND hg.games >=10
+	ORDER BY avg_attendance, row_number)
+SELECT park_name, team_name, avg_attendance
+FROM query
+WHERE row_number = 1
+LIMIT 5;
+--Bottom 5: tropicana field, oakland-alameda, progressive field, marlins park, uscellular field
 
 
 
