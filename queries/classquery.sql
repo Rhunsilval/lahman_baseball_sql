@@ -290,6 +290,57 @@ FROM query
 WHERE row_number = 1
 LIMIT 5;
 --Bottom 5: tropicana field, oakland-alameda, progressive field, marlins park, uscellular field
+--NOTE: I'm not sure i understand why these joins make so many duplicates, but i do know how to remove them
 
+
+--Q9: Which managers have won the TSN Manager of the Year award in both the National League (NL) 
+--and the American League (AL)? 
+--Give their full name and the teams that they were managing when they won the award.
+WITH winners AS (  -- CTE to get my manager/playerids
+	SELECT 
+		playerid
+	FROM (
+		SELECT -- now all my managers who have both awards are numbered "2"
+			playerid,
+			yearid,
+			ROW_NUMBER() OVER (PARTITION BY playerid)
+		FROM (
+			SELECT -- got rid of the duplicates EXCEPT where they have both awards
+				playerid,
+				awardid,
+				yearid
+			FROM (
+				SELECT 
+					playerid,
+					awardid,
+					yearid, -- i think i need to help identify teams when awards were won
+					lgid,
+					ROW_NUMBER () OVER (PARTITION BY (playerid, lgid)) -- to help get rid of duplicates except when awards are different
+				FROM awardsmanagers
+				WHERE awardid = 'TSN Manager of the Year'
+					AND (lgid='NL' OR lgid ='AL')
+					ORDER BY playerid, lgid) AS subquery1
+			WHERE row_number = 1) AS subquery2) AS subquery3
+	WHERE row_number = 2) 
+SELECT 
+	p.namefirst AS firstname,
+	p.namelast AS lastname,
+	aw.yearid, 
+	aw.lgid AS award_won,
+	t.name AS team_name
+FROM winners AS w
+LEFT JOIN awardsmanagers AS aw
+	ON w.playerid = aw.playerid
+LEFT JOIN people AS p
+	ON aw.playerid = p.playerid
+LEFT JOIN managers AS m
+	ON aw.playerid = m.playerid
+		AND aw.yearid = m.yearid
+LEFT JOIN teams AS t
+	ON m.teamid = t.teamid
+	AND m.yearid = t.yearid
+WHERE aw.awardid = 'TSN Manager of the Year'
+	AND (aw.lgid = 'NL' OR aw.lgid = 'AL')
+ORDER BY w.playerid, aw.yearid, m.teamid
 
 
